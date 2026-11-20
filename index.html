@@ -3,8 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FTW PRUE in the browser</title>
-    <meta name="description" content="Run the Fields of The World CC-BY PRUE field boundary model on Sentinel-2 benchmark chips, entirely in your browser with onnxruntime-web." />
+    <title>FTW field boundaries in the browser</title>
+    <meta name="description" content="Runs the Fields of The World PRUE field boundary model on Sentinel-2 chips from the FTW benchmark. Inference happens in your browser with onnxruntime-web." />
+    <link rel="canonical" href="https://fieldsofthe.world/ftw-webgpu/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Fields of The World" />
+    <meta property="og:title" content="Field boundaries, detected in your browser" />
+    <meta property="og:description" content="Runs the FTW PRUE field boundary model on Sentinel-2 chips from the FTW benchmark, locally with WebGPU or WebAssembly." />
+    <meta property="og:url" content="https://fieldsofthe.world/ftw-webgpu/" />
+    <meta property="og:image" content="https://fieldsofthe.world/ftw-webgpu/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Fields of The World logo beside a map of field parcels with orange boundaries" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Field boundaries, detected in your browser" />
+    <meta name="twitter:description" content="Runs the FTW PRUE field boundary model on Sentinel-2 chips, locally in your browser." />
+    <meta name="twitter:image" content="https://fieldsofthe.world/ftw-webgpu/og.png" />
     <!-- Enables cross-origin isolation on GitHub Pages so onnxruntime-web can use WASM threads. -->
     <script src="/coi-serviceworker.min.js"></script>
     <link rel="icon" type="image/svg+xml" href="/logomark.svg" />
@@ -108,7 +122,7 @@
         <label class="slider">
           <span>Normalization divisor <output id="divisor-out"></output></span>
           <input type="range" id="divisor" min="500" max="10000" step="100" value="3000" />
-          <small>Reflectance is divided by this. The model was trained with 3000.</small>
+          <small>Reflectance is divided by this value. Training used 3000.</small>
         </label>
         <label class="field">Window order
           <select id="order">
@@ -123,7 +137,7 @@
         <label class="slider">
           <span>Input size <output id="size-out"></output></span>
           <input type="range" id="size" min="128" max="1024" step="32" value="256" />
-          <small>The 256 px chip is resampled to this size before inference, like feeding a larger tile.</small>
+          <small>The 256 px chip is resampled to this size before inference, which approximates a larger tile.</small>
         </label>
         <label class="slider">
           <span>Patch size <output id="patch-out"></output></span>

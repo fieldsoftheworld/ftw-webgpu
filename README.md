@@ -1,8 +1,8 @@
-# FTW PRUE in the browser
+# FTW field boundaries in the browser
 
 https://fieldsofthe.world/ftw-webgpu/
 
-This app runs the [Fields of The World](https://fieldsofthe.world) CC-BY PRUE field boundary model on chips from the FTW benchmark, entirely in the browser with [onnxruntime-web](https://onnxruntime.ai/docs/tutorials/web/). It picks a random chip from the benchmark on Source Cooperative, stacks its two Sentinel-2 windows, runs the model, and draws the predicted field and boundary classes over the imagery. Each prediction is scored against the chip's 3-class label. Changing a slider reruns inference right away, so you can see how the model responds to the normalization divisor, the input scale, and the sliding-window patch size.
+This app runs the [Fields of The World](https://fieldsofthe.world) CC-BY PRUE field boundary model on chips from the FTW benchmark, entirely in the browser with [onnxruntime-web](https://onnxruntime.ai/docs/tutorials/web/). It picks a random chip from the benchmark on Source Cooperative, stacks its two Sentinel-2 windows, runs the model, and draws the predicted field and boundary classes over the imagery. Each prediction is scored against the chip's 3-class label. Changing a slider reruns inference right away, which shows how the predictions depend on the normalization divisor, the input scale, and the sliding-window patch size.
 
 ## What it runs
 
@@ -15,7 +15,7 @@ This app runs the [Fields of The World](https://fieldsofthe.world) CC-BY PRUE fi
 
 - **Normalization divisor.** What reflectance is divided by before inference.
 - **Window order.** Feeds the windows in training order or swapped.
-- **Input size.** The chip is bilinearly resampled to this size (a multiple of 32, from 128 to 1024 px) before inference. Upsampling stands in for feeding the model a larger tile, or imagery at a finer resolution than it was trained on.
+- **Input size.** The chip is bilinearly resampled to this size (a multiple of 32, from 128 to 1024 px) before inference. Upsampling approximates a larger tile, or imagery at a finer resolution than the model was trained on.
 - **Patch size and overlap.** An input larger than the patch runs as a sliding window. Overlapping logits are blended with a linear ramp before the argmax.
 
 The URL hash keeps the chip and settings, so a link reopens the same view.
