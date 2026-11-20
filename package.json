@@ -1,0 +1,24 @@
+{
+  "name": "ftw",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "In-browser Fields of The World field boundary inference with the CC-BY PRUE model and onnxruntime-web",
+  "scripts": {
+    "prepare-assets": "node scripts/copy-assets.mjs",
+    "dev": "npm run prepare-assets && vite",
+    "build": "npm run prepare-assets && tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "geotiff": "3.0.5",
+    "onnxruntime-web": "1.31.1"
+  },
+  "devDependencies": {
+    "coi-serviceworker": "0.1.7",
+    "typescript": "6.0.3",
+    "vite": "8.3.5"
+  }
+}

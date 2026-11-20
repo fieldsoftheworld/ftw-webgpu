@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FTW PRUE in the browser</title>
+    <meta name="description" content="Run the Fields of The World CC-BY PRUE field boundary model on Sentinel-2 benchmark chips, entirely in your browser with onnxruntime-web." />
+    <!-- Enables cross-origin isolation on GitHub Pages so onnxruntime-web can use WASM threads. -->
+    <script src="/coi-serviceworker.min.js"></script>
+    <link rel="icon" type="image/svg+xml" href="/logomark.svg" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+  </head>
+  <body>
+    <aside class="rail" aria-hidden="true"><span>Fields of The World</span></aside>
+
+    <main class="app">
+      <header class="masthead">
+        <img class="logo" src="/logo-dark.svg" alt="Fields of The World" width="146" height="56" />
+        <div class="titles">
+          <p class="eyebrow">PRUE · CC-BY · onnxruntime-web</p>
+          <h1>Field boundaries, detected in your browser</h1>
+        </div>
+      </header>
+
+      <section class="viewer">
+        <div class="stage-wrap">
+          <div class="stage" id="stage">
+            <canvas id="base"></canvas>
+            <canvas id="pred" class="overlay"></canvas>
+            <canvas id="labels" class="overlay" hidden></canvas>
+            <div class="sweep" aria-hidden="true"></div>
+            <div class="stage-msg" id="stage-msg">Loading chip index…</div>
+          </div>
+          <div class="view-toggle" role="radiogroup" aria-label="Overlay">
+            <button type="button" data-view="pred" class="on" role="radio" aria-checked="true">Prediction</button>
+            <button type="button" data-view="labels" role="radio" aria-checked="false">Labels</button>
+          </div>
+        </div>
+
+        <div class="side">
+          <div class="chip-meta" id="chip-meta"></div>
+
+          <div class="thumbs">
+            <figure data-base="b" class="thumb on">
+              <canvas id="thumb-b"></canvas>
+              <figcaption><b>Window B</b><span id="dates-b"></span></figcaption>
+            </figure>
+            <figure data-base="a" class="thumb">
+              <canvas id="thumb-a"></canvas>
+              <figcaption><b>Window A</b><span id="dates-a"></span></figcaption>
+            </figure>
+          </div>
+
+          <dl class="stats" id="stats">
+            <div><dt>Field IoU</dt><dd id="s-field">–</dd></div>
+            <div><dt>Boundary IoU</dt><dd id="s-boundary">–</dd></div>
+            <div><dt>Pixel accuracy</dt><dd id="s-acc">–</dd></div>
+            <div><dt>Inference</dt><dd id="s-ms">–</dd></div>
+            <div><dt>Tiles</dt><dd id="s-tiles">–</dd></div>
+            <div><dt>Field / boundary px</dt><dd id="s-frac">–</dd></div>
+          </dl>
+          <p class="legend">
+            <span class="sw field"></span>Field <span class="sw boundary"></span>Boundary
+            <span class="hint">IoU is against the FTW 3-class labels, ignoring no-data pixels.</span>
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <aside class="panel" id="panel">
+      <section class="group">
+        <h2>Sample</h2>
+        <label class="field">Country
+          <select id="country"><option value="any">Any country</option></select>
+        </label>
+        <label class="field">Split
+          <select id="split">
+            <option value="test">Test (held out)</option>
+            <option value="val">Validation</option>
+            <option value="train">Train</option>
+          </select>
+        </label>
+        <button type="button" class="primary" id="random">New random chip <kbd>R</kbd></button>
+      </section>
+
+      <section class="group">
+        <h2>Model</h2>
+        <label class="field">Encoder
+          <select id="model">
+            <option value="b3">EfficientNet-B3 · 51 MB</option>
+            <option value="b5">EfficientNet-B5 · 122 MB</option>
+            <option value="b7">EfficientNet-B7 · 263 MB</option>
+          </select>
+        </label>
+        <label class="field">Backend
+          <select id="backend">
+            <option value="auto">Auto (WebGPU if available)</option>
+            <option value="webgpu">WebGPU</option>
+            <option value="wasm">WebAssembly (CPU)</option>
+          </select>
+        </label>
+        <p class="status" id="status">Starting…</p>
+        <div class="progress" id="progress" hidden><div></div></div>
+      </section>
+
+      <section class="group">
+        <h2>Preprocessing</h2>
+        <label class="slider">
+          <span>Normalization divisor <output id="divisor-out"></output></span>
+          <input type="range" id="divisor" min="500" max="10000" step="100" value="3000" />
+          <small>Reflectance is divided by this. The model was trained with 3000.</small>
+        </label>
+        <label class="field">Window order
+          <select id="order">
+            <option value="ba">B then A (as trained)</option>
+            <option value="ab">A then B (swapped)</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="group">
+        <h2>Scale &amp; tiling</h2>
+        <label class="slider">
+          <span>Input size <output id="size-out"></output></span>
+          <input type="range" id="size" min="128" max="1024" step="32" value="256" />
+          <small>The 256 px chip is resampled to this size before inference, like feeding a larger tile.</small>
+        </label>
+        <label class="slider">
+          <span>Patch size <output id="patch-out"></output></span>
+          <input type="range" id="patch" min="64" max="1024" step="32" value="256" />
+          <small>Inputs larger than the patch run as a sliding window.</small>
+        </label>
+        <label class="slider">
+          <span>Patch overlap <output id="overlap-out"></output></span>
+          <input type="range" id="overlap" min="0" max="50" step="5" value="25" />
+          <small>Overlapping logits are blended with a linear ramp.</small>
+        </label>
+      </section>
+
+      <section class="group">
+        <h2>Display</h2>
+        <label class="slider">
+          <span>Overlay opacity <output id="opacity-out"></output></span>
+          <input type="range" id="opacity" min="0" max="100" step="5" value="70" />
+        </label>
+        <div class="checks">
+          <label><input type="checkbox" id="show-field" checked /> Field</label>
+          <label><input type="checkbox" id="show-boundary" checked /> Boundary</label>
+        </div>
+      </section>
+
+      <footer class="credits">
+        <p>Model: <a href="https://huggingface.co/fieldsoftheworld/ftw-prue-ccby">FTW PRUE CC-BY</a> (CC-BY-4.0), trained only on CC-BY and CC0 countries.
+          Chips: <a href="https://source.coop/kerner-lab/fields-of-the-world">Fields of The World benchmark</a> on Source Cooperative, Sentinel-2 imagery from Copernicus; label licenses vary by country and are shown with each chip.</p>
+        <p><a href="https://github.com/fieldsoftheworld/ftw-webgpu">Source on GitHub</a> · <a href="https://fieldsofthe.world">fieldsofthe.world</a></p>
+      </footer>
+    </aside>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
